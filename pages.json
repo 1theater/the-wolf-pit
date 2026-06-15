@@ -1,6 +1,6 @@
 [
   { "slug": "home",    "title": "Волчья яма",          "file": "home.md",        "poster": "images/poster.png", "hideInNav": true },
-  { "slug": "play",    "title": "Пьеса",               "file": "the-wolf-pit.md" },
+  { "slug": "play",    "title": "Пьеса",               "file": "the-wolf-pit.md", "timing": true },
   { "slug": "roles",   "title": "Книга ролей",         "file": "role-book.md" },
   { "slug": "staging", "title": "Постановочная часть", "file": "staging.md" }
 ]

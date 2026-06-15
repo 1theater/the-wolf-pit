@@ -96,6 +96,115 @@ function colorizeCharacters(root) {
   }
 }
 
+// --- Ориентировочный хронометраж ------------------------------------------
+// Театральные пьесы не размечают тайминг построчно (это не конвенция жанра),
+// а точное время даёт только репетиция. Поэтому оцениваем время на уровне сцен
+// по модели: речь + проигрывание действия по ремаркам + паузы. Коэффициенты —
+// допущения; меняй их под темп своей постановки.
+const TIMING = {
+  speechWpm: 150,   // темп речи, слов в минуту
+  actionWpm: 110,   // темп проигрывания действия из ремарок, слов в минуту
+  pauseShort: 3,    // «Пауза.» и звуковая отбивка, секунд
+  pauseLong: 6,     // «Долгая пауза», «Молчание», «Тишина», секунд
+};
+
+// Слова реплики: убираем имена-метки (жирный) и пояснения в скобках (курсив).
+function spokenWords(line) {
+  const cleaned = line
+    .replace(/\*\*[^*]*\*\*/g, ' ')
+    .replace(/\*[^*]*\*/g, ' ')
+    .replace(/[#>*_`~]+/g, ' ');
+  const w = cleaned.match(/[\p{L}\p{Nd}]+(?:[''’-][\p{L}\p{Nd}]+)*/gu);
+  return w ? w.length : 0;
+}
+
+function allWords(text) {
+  const w = text.replace(/[#>*_`~]+/g, ' ').match(/[\p{L}\p{Nd}]+/gu);
+  return w ? w.length : 0;
+}
+
+// Делит текст пьесы на крупные сцены и оценивает время каждой в секундах.
+// Заголовок пьесы (первый h1) пропускаем; h2-подзаголовок действия
+// («Возвращение» сразу за «ДЕЙСТВИЕ ПЕРВОЕ») приклеиваем к этому действию.
+function computeTiming(mdText) {
+  const lines = mdText.split(/\r?\n/);
+  const sections = [];
+  let current = null;
+  let titleSeen = false;
+  let actOpenEmpty = false; // h1-действие открыто, содержимого ещё не было
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (/^#\s/.test(line)) {                          // h1
+      const text = line.replace(/^#\s+/, '');
+      if (!titleSeen) { titleSeen = true; current = null; actOpenEmpty = false; continue; }
+      current = { level: 1, key: text, sec: 0 };
+      sections.push(current);
+      actOpenEmpty = true;
+      continue;
+    }
+    if (/^##\s/.test(line)) {                          // h2
+      const text = line.replace(/^##\s+/, '');
+      if (current && actOpenEmpty) { actOpenEmpty = false; continue; } // подзаголовок действия
+      current = { level: 2, key: text, sec: 0 };
+      sections.push(current);
+      actOpenEmpty = false;
+      continue;
+    }
+    if (/^###\s/.test(line)) continue;                 // явление — не граница сцены
+    if (/^-{3,}$/.test(line)) continue;                // разделитель
+    if (!current) continue;
+
+    if (/^>/.test(line)) {                             // звук/фонограмма — отбивка
+      current.sec += TIMING.pauseShort;
+    } else if (/^\*[^*].*\*$/.test(line) && !line.includes('**')) {  // ремарка-действие
+      const inner = line.replace(/^\*|\*$/g, '');
+      current.sec += (allWords(inner) / TIMING.actionWpm) * 60;
+      if (/долг|молчан|тишин/i.test(inner)) current.sec += TIMING.pauseLong;
+      else if (/пауз/i.test(inner)) current.sec += TIMING.pauseShort;
+    } else {                                           // реплика
+      current.sec += (spokenWords(line) / TIMING.speechWpm) * 60;
+      const inlinePauses = (line.match(/\*\([^)]*пауз[^)]*\)\*/gi) || []).length;
+      current.sec += inlinePauses * TIMING.pauseShort;
+    }
+    if (current.sec > 0) actOpenEmpty = false;
+  }
+
+  const toMin = (s) => Math.max(1, Math.round(s / 60));
+  let total = 0;
+  const scenes = [];
+  for (const s of sections) {
+    total += s.sec;
+    if (s.sec > 0) scenes.push({ key: s.level + '|' + s.key, minutes: toMin(s.sec) });
+  }
+  return { totalMinutes: Math.max(1, Math.round(total / 60)), scenes };
+}
+
+function applyTiming(root, mdText) {
+  const t = computeTiming(mdText);
+
+  const banner = document.createElement('div');
+  banner.className = 'runtime-total';
+  banner.innerHTML =
+    '<strong>≈ ' + t.totalMinutes + ' мин</strong>' +
+    '<span>ориентировочно, без антракта — оценка по тексту (речь, действие, паузы). ' +
+    'Точное время даёт только репетиция.</span>';
+  const firstHr = root.querySelector('hr');
+  if (firstHr && firstHr.parentNode === root) root.insertBefore(banner, firstHr.nextSibling);
+  else root.insertBefore(banner, root.firstChild);
+
+  const map = new Map(t.scenes.map((s) => [s.key, s.minutes]));
+  for (const h of root.querySelectorAll('h1, h2')) {
+    const key = (h.nodeName === 'H1' ? 1 : 2) + '|' + h.textContent.trim();
+    if (!map.has(key)) continue;
+    const badge = document.createElement('span');
+    badge.className = 'runtime';
+    badge.textContent = '≈ ' + map.get(key) + ' мин';
+    h.appendChild(badge);
+  }
+}
+
 async function render(pages) {
   const entry = resolveRoute(pages);
   buildNav(pages, entry.slug);
@@ -108,6 +217,7 @@ async function render(pages) {
     }
     html += md.render(text);
     contentEl.innerHTML = html;
+    if (entry.timing) applyTiming(contentEl, text);
     colorizeCharacters(contentEl);
     window.scrollTo(0, 0);
   } catch (e) {
