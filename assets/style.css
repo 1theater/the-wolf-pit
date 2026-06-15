@@ -82,6 +82,14 @@ body {
 .content h2 { font-size: 1.4rem; margin: 2rem 0 0.75rem; color: var(--accent); }
 .content h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
+.content p img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 0.5rem auto 1.5rem;
+}
+
 .content p { margin: 0 0 1rem; }
 .content em { color: var(--muted); }
 .content strong { color: var(--text); }
