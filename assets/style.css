@@ -98,6 +98,15 @@ body {
 .content a { color: #c98a8a; }
 .error { color: var(--accent); }
 
+/* Имена действующих лиц — цвет по характеру (классы проставляет app.js). */
+.char-seryy   { color: #8a97a6; }
+.char-ded     { color: #cc9a4a; }
+.char-bes     { color: #c0443e; }
+.char-hirurg  { color: #3fa89a; }
+.char-kaban   { color: #b07440; }
+.char-schegol { color: #9fb84a; }
+.char-kurator { color: #6f7fb0; }
+
 @media (max-width: 480px) {
   body { font-size: 17px; }
   .content { padding: 1rem 1rem 3rem; }
