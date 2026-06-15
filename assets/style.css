@@ -1,0 +1,105 @@
+:root {
+  --bg: #15171b;
+  --bg-elev: #1d2026;
+  --text: #e6e3dc;
+  --muted: #9a958c;
+  --accent: #a23b3b;
+  --rule: #2c2f36;
+  --maxw: 42rem;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.25rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--rule);
+}
+
+.site-title {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 0.95rem;
+}
+
+.site-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.15rem 0;
+  border-bottom: 2px solid transparent;
+}
+.site-nav a:hover { color: var(--text); }
+.site-nav a.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.content {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+}
+
+.poster {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 0 auto 2rem;
+}
+
+.content h1, .content h2, .content h3 {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.25;
+}
+.content h1 { font-size: 1.9rem; margin: 2rem 0 1rem; text-align: center; letter-spacing: 0.02em; }
+.content h2 { font-size: 1.4rem; margin: 2rem 0 0.75rem; color: var(--accent); }
+.content h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.content p { margin: 0 0 1rem; }
+.content em { color: var(--muted); }
+.content strong { color: var(--text); }
+
+.content blockquote {
+  margin: 1rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+  font-style: italic;
+}
+
+.content hr { border: 0; height: 1px; background: var(--rule); margin: 2rem 0; }
+.content a { color: #c98a8a; }
+.error { color: var(--accent); }
+
+@media (max-width: 480px) {
+  body { font-size: 17px; }
+  .content { padding: 1rem 1rem 3rem; }
+  .content h1 { font-size: 1.6rem; }
+}
