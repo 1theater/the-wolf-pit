@@ -106,34 +106,6 @@ body {
 .content a { color: #c98a8a; }
 .error { color: var(--accent); }
 
-/* Страница «Хронометраж» (строит app.js). */
-.runtime-note {
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.runtime-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1.5rem 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-}
-.runtime-table td {
-  padding: 0.6rem 0.5rem;
-  border-bottom: 1px solid var(--rule);
-}
-.runtime-table td:last-child {
-  text-align: right;
-  white-space: nowrap;
-  color: var(--muted);
-}
-.runtime-table .runtime-total-row td {
-  border-bottom: none;
-  border-top: 2px solid var(--accent);
-  font-weight: 700;
-  color: var(--text);
-}
-
 /* Имена действующих лиц — цвет по характеру (классы проставляет app.js). */
 .char-seryy   { color: #8a97a6; }
 .char-ded     { color: #cc9a4a; }
