@@ -1,0 +1,4 @@
+[
+  { "slug": "play",  "title": "Пьеса",       "file": "Волчья яма.md", "poster": "poster.png" },
+  { "slug": "roles", "title": "Книга ролей", "file": "Книга ролей.md" }
+]
