@@ -100,7 +100,8 @@ function colorizeCharacters(root) {
 // Театральные пьесы не размечают тайминг построчно (это не конвенция жанра),
 // а точное время даёт только репетиция. Поэтому оцениваем время на уровне сцен
 // по модели: речь + проигрывание действия по ремаркам + паузы. Коэффициенты —
-// допущения; меняй их под темп своей постановки.
+// допущения; меняй их под темп своей постановки. Результат показывается
+// на отдельной странице «Хронометраж» (см. pages.json: поле "source").
 const TIMING = {
   speechWpm: 150,   // темп речи, слов в минуту
   actionWpm: 110,   // темп проигрывания действия из ремарок, слов в минуту
@@ -139,21 +140,22 @@ function computeTiming(mdText) {
     if (/^#\s/.test(line)) {                          // h1
       const text = line.replace(/^#\s+/, '');
       if (!titleSeen) { titleSeen = true; current = null; actOpenEmpty = false; continue; }
-      current = { level: 1, key: text, sec: 0 };
+      current = { title: text, sec: 0 };
       sections.push(current);
       actOpenEmpty = true;
       continue;
     }
     if (/^##\s/.test(line)) {                          // h2
       const text = line.replace(/^##\s+/, '');
-      if (current && actOpenEmpty) { actOpenEmpty = false; continue; } // подзаголовок действия
-      current = { level: 2, key: text, sec: 0 };
+      if (current && actOpenEmpty) { current.title += ' · ' + text; actOpenEmpty = false; continue; } // подзаголовок действия
+      current = { title: text, sec: 0 };
       sections.push(current);
       actOpenEmpty = false;
       continue;
     }
     if (/^###\s/.test(line)) continue;                 // явление — не граница сцены
     if (/^-{3,}$/.test(line)) continue;                // разделитель
+    if (/^!\[.*\]\(/.test(line)) continue;             // картинка-постер главы
     if (!current) continue;
 
     if (/^>/.test(line)) {                             // звук/фонограмма — отбивка
@@ -176,33 +178,31 @@ function computeTiming(mdText) {
   const scenes = [];
   for (const s of sections) {
     total += s.sec;
-    if (s.sec > 0) scenes.push({ key: s.level + '|' + s.key, minutes: toMin(s.sec) });
+    if (s.sec > 0) scenes.push({ title: s.title, minutes: toMin(s.sec) });
   }
   return { totalMinutes: Math.max(1, Math.round(total / 60)), scenes };
 }
 
-function applyTiming(root, mdText) {
-  const t = computeTiming(mdText);
+function escapeHtml(s) {
+  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
 
-  const banner = document.createElement('div');
-  banner.className = 'runtime-total';
-  banner.innerHTML =
-    '<strong>≈ ' + t.totalMinutes + ' мин</strong>' +
-    '<span>ориентировочно, без антракта — оценка по тексту (речь, действие, паузы). ' +
-    'Точное время даёт только репетиция.</span>';
-  const firstHr = root.querySelector('hr');
-  if (firstHr && firstHr.parentNode === root) root.insertBefore(banner, firstHr.nextSibling);
-  else root.insertBefore(banner, root.firstChild);
-
-  const map = new Map(t.scenes.map((s) => [s.key, s.minutes]));
-  for (const h of root.querySelectorAll('h1, h2')) {
-    const key = (h.nodeName === 'H1' ? 1 : 2) + '|' + h.textContent.trim();
-    if (!map.has(key)) continue;
-    const badge = document.createElement('span');
-    badge.className = 'runtime';
-    badge.textContent = '≈ ' + map.get(key) + ' мин';
-    h.appendChild(badge);
+// Отдельная страница «Хронометраж»: считает время из текста пьесы и строит таблицу.
+function renderTimingPage(playText) {
+  const t = computeTiming(playText);
+  let rows = '';
+  for (const s of t.scenes) {
+    rows += '<tr><td>' + escapeHtml(s.title) + '</td><td>≈ ' + s.minutes + ' мин</td></tr>';
   }
+  return (
+    '<h1>Хронометраж</h1>' +
+    '<p class="runtime-note">Ориентировочная оценка по тексту пьесы: речь (' + TIMING.speechWpm +
+    ' сл/мин), проигрывание действия из ремарок (' + TIMING.actionWpm +
+    ' сл/мин) и паузы. Точное время даёт только репетиция — на сцене обычно дольше.</p>' +
+    '<table class="runtime-table"><tbody>' + rows +
+    '<tr class="runtime-total-row"><td>Итого, без антракта</td><td>≈ ' + t.totalMinutes + ' мин</td></tr>' +
+    '</tbody></table>'
+  );
 }
 
 async function render(pages) {
@@ -210,14 +210,18 @@ async function render(pages) {
   buildNav(pages, entry.slug);
   document.title = entry.title === 'Волчья яма' ? 'Волчья яма' : entry.title + ' — Волчья яма';
   try {
-    const text = await fetchText(entry.file);
     let html = '';
-    if (entry.poster) {
-      html += '<img class="poster" src="' + encodeURI(entry.poster) + '" alt="Постер">';
+    if (entry.source) {                                // генерируемая страница (хронометраж)
+      const playText = await fetchText(entry.source);
+      html = renderTimingPage(playText);
+    } else {
+      const text = await fetchText(entry.file);
+      if (entry.poster) {
+        html += '<img class="poster" src="' + encodeURI(entry.poster) + '" alt="Постер">';
+      }
+      html += md.render(text);
     }
-    html += md.render(text);
     contentEl.innerHTML = html;
-    if (entry.timing) applyTiming(contentEl, text);
     colorizeCharacters(contentEl);
     window.scrollTo(0, 0);
   } catch (e) {
