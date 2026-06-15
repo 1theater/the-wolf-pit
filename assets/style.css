@@ -66,14 +66,6 @@ body {
   padding: 1.5rem 1.25rem 4rem;
 }
 
-.poster {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 6px;
-  margin: 0 auto 2rem;
-}
-
 .content h1, .content h2, .content h3 {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.25;
@@ -111,7 +103,7 @@ body {
 .char-ded     { color: #cc9a4a; }
 .char-bes     { color: #c0443e; }
 .char-hirurg  { color: #3fa89a; }
-.char-kaban   { color: #b07440; }
+.char-lom     { color: #b07440; }
 .char-schegol { color: #9fb84a; }
 .char-kurator { color: #6f7fb0; }
 

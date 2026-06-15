@@ -47,7 +47,7 @@ const CHARACTERS = [
   { cls: 'ded', forms: ['ДЕД', 'ДЕДА', 'ДЕДУ', 'ДЕДОМ', 'ДЕДЕ', 'Дед', 'Деда', 'Деду', 'Дедом', 'Деде'] },
   { cls: 'bes', forms: ['БЕС', 'БЕСА', 'БЕСУ', 'БЕСОМ', 'БЕСЕ', 'Бес', 'Беса', 'Бесу', 'Бесом', 'Бесе'] },
   { cls: 'hirurg', forms: ['ХИРУРГ', 'ХИРУРГА', 'ХИРУРГУ', 'ХИРУРГОМ', 'ХИРУРГЕ', 'Хирург', 'Хирурга', 'Хирургу', 'Хирургом', 'Хирурге'] },
-  { cls: 'kaban', forms: ['КАБАН', 'КАБАНА', 'КАБАНУ', 'КАБАНОМ', 'КАБАНЕ', 'Кабан', 'Кабана', 'Кабану', 'Кабаном', 'Кабане'] },
+  { cls: 'lom', forms: ['ЛОМ', 'ЛОМА', 'ЛОМУ', 'ЛОМОМ', 'ЛОМЕ', 'Лом', 'Лома', 'Лому', 'Ломом', 'Ломе'] },
   { cls: 'schegol', forms: ['ЩЕГОЛ', 'ЩЕГЛА', 'ЩЕГЛУ', 'ЩЕГЛОМ', 'ЩЕГЛЕ', 'Щегол', 'Щегла', 'Щеглу', 'Щеглом', 'Щегле'] },
   { cls: 'kurator', forms: ['КУРАТОР', 'КУРАТОРА', 'КУРАТОРУ', 'КУРАТОРОМ', 'КУРАТОРЕ', 'Куратор', 'Куратора', 'Куратору', 'Куратором', 'Кураторе'] },
 ];
@@ -55,15 +55,25 @@ const CHARACTERS = [
 const FORM_TO_CLASS = {};
 for (const c of CHARACTERS) for (const f of c.forms) FORM_TO_CLASS[f] = c.cls;
 
-// Граница — не буква/цифра/подчёркивание с обеих сторон, чтобы не цеплять части слов.
-const NAME_RE = new RegExp(
-  '(?<![\\p{L}\\p{Nd}_])(' +
-  Object.keys(FORM_TO_CLASS).sort((a, b) => b.length - a.length).join('|') +
-  ')(?![\\p{L}\\p{Nd}_])',
-  'gu'
-);
+// Граница слова — не буква/цифра/подчёркивание. Хвостовую границу проверяет сам регэксп
+// (lookahead), ведущую — код в colorizeCharacters. Lookbehind тут НЕ используем: он не
+// поддерживается старыми Safari (<16.4) и уронил бы весь скрипт в белый экран ещё до init().
+// try/catch — страховка на случай иной несовместимости регэкспа.
+const BOUNDARY_RE = /[\p{L}\p{Nd}_]/u;
+let NAME_RE = null;
+try {
+  NAME_RE = new RegExp(
+    '(' +
+    Object.keys(FORM_TO_CLASS).sort((a, b) => b.length - a.length).join('|') +
+    ')(?![\\p{L}\\p{Nd}_])',
+    'gu'
+  );
+} catch (e) {
+  NAME_RE = null; // подсветка имён отключится, но страница отрендерится
+}
 
 function colorizeCharacters(root) {
+  if (!NAME_RE) return; // регэксп не построился — рендерим без подсветки, не падаем
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const p = node.parentNode;
@@ -84,6 +94,8 @@ function colorizeCharacters(root) {
     let m;
     NAME_RE.lastIndex = 0;
     while ((m = NAME_RE.exec(text)) !== null) {
+      // Ведущая граница слова (замена lookbehind): символ перед именем — не часть слова.
+      if (m.index > 0 && BOUNDARY_RE.test(text[m.index - 1])) continue;
       if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
       const span = document.createElement('span');
       span.className = 'char char-' + FORM_TO_CLASS[m[0]];
@@ -99,15 +111,10 @@ function colorizeCharacters(root) {
 async function render(pages) {
   const entry = resolveRoute(pages);
   buildNav(pages, entry.slug);
-  document.title = entry.title === 'Волчья яма' ? 'Волчья яма' : entry.title + ' — Волчья яма';
+  document.title = entry === pages[0] ? 'Волчья яма' : entry.title + ' — Волчья яма';
   try {
     const text = await fetchText(entry.file);
-    let html = '';
-    if (entry.poster) {
-      html += '<img class="poster" src="' + encodeURI(entry.poster) + '" alt="Постер">';
-    }
-    html += md.render(text);
-    contentEl.innerHTML = html;
+    contentEl.innerHTML = md.render(text);
     colorizeCharacters(contentEl);
     window.scrollTo(0, 0);
   } catch (e) {
