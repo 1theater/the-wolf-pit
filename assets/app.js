@@ -115,6 +115,12 @@ async function render(pages) {
   try {
     const text = await fetchText(entry.file);
     contentEl.innerHTML = md.render(text);
+    // Анти-кеш и для локальных картинок (постеры): чтобы обновлённый файл
+    // подтягивался сразу, как и .md. Внешние и data: URL не трогаем.
+    for (const img of contentEl.querySelectorAll('img')) {
+      const src = img.getAttribute('src');
+      if (src && !/^(https?:|data:|\/\/)/i.test(src)) img.setAttribute('src', bust(src));
+    }
     colorizeCharacters(contentEl);
     window.scrollTo(0, 0);
   } catch (e) {
