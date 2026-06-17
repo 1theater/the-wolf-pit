@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Волчья яма">
+  <!-- фон-яма -->
+  <rect width="32" height="32" rx="6.5" fill="#15171b"/>
+  <circle cx="16" cy="18" r="14" fill="#000000" opacity="0.45"/>
+  <!-- волчьи глаза в темноте -->
+  <g>
+    <ellipse cx="10.4" cy="14.6" rx="4" ry="2.4" fill="#bf4f2c" transform="rotate(18 10.4 14.6)"/>
+    <ellipse cx="21.6" cy="14.6" rx="4" ry="2.4" fill="#bf4f2c" transform="rotate(-18 21.6 14.6)"/>
+    <!-- вертикальные зрачки-щели хищника -->
+    <ellipse cx="10.4" cy="14.6" rx="0.9" ry="1.9" fill="#15171b" transform="rotate(18 10.4 14.6)"/>
+    <ellipse cx="21.6" cy="14.6" rx="0.9" ry="1.9" fill="#15171b" transform="rotate(-18 21.6 14.6)"/>
+  </g>
+</svg>
